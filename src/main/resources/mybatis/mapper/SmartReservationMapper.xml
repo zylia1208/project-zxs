@@ -1,0 +1,148 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<!DOCTYPE mapper
+        PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN"
+        "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+
+<mapper namespace="com.mango.dao.SmartReservationDao">
+
+    <select id="getSmartRooms" resultType="com.mango.pojo.SmartRoom">
+        select c.room_id, c.room_name, c.building_id, tb.building_name, tb.building_location, c.room_floor, c.available_seat,
+               count(distinct ss.seat_id) seat_count,
+               count(distinct case when sr.status in ('待签到','已签到') then sr.reservation_id end) active_reservation_count
+        from reservation_demo.classroom c
+        join reservation_demo.t_building tb on c.building_id = tb.building_id
+        left join reservation_demo.smart_seat ss on ss.room_id = c.room_id and ss.building_id = c.building_id
+        left join reservation_demo.smart_seat_reservation sr on sr.room_id = c.room_id and sr.building_id = c.building_id and sr.reservation_date = curdate()
+        group by c.room_id, c.room_name, c.building_id, tb.building_name, tb.building_location, c.room_floor, c.available_seat
+        order by c.building_id, c.room_floor, c.room_id
+    </select>
+
+    <select id="getSmartRoomById" resultType="com.mango.pojo.SmartRoom">
+        select c.room_id, c.room_name, c.building_id, tb.building_name, tb.building_location, c.room_floor, c.available_seat
+        from reservation_demo.classroom c
+        join reservation_demo.t_building tb on c.building_id = tb.building_id
+        where c.room_id = #{room_id}
+        limit 1
+    </select>
+
+    <select id="getSmartSeats" parameterType="Map" resultType="com.mango.pojo.SmartSeat">
+        select ss.seat_id, ss.room_id, ss.building_id, ss.seat_no, ss.row_index, ss.col_index, ss.tags, ss.status, ss.assigned_major,
+               c.room_name, tb.building_name,
+               case when exists (
+                   select 1 from reservation_demo.smart_seat_reservation sr
+                   where sr.seat_id = ss.seat_id
+                     and sr.reservation_date = #{reservation_date}
+                     and sr.status in ('待签到','已签到')
+                     and sr.start_time = #{start_time}
+               ) then '1' else '0' end occupied
+        from reservation_demo.smart_seat ss
+        join reservation_demo.classroom c on ss.room_id = c.room_id and ss.building_id = c.building_id
+        join reservation_demo.t_building tb on c.building_id = tb.building_id
+        where ss.room_id = #{room_id}
+        <if test="tag != null and tag != '' and tag != '全部'">
+            and ss.tags like concat('%', #{tag}, '%')
+        </if>
+        order by ss.row_index, ss.col_index
+    </select>
+
+    <select id="getSmartSeatById" resultType="com.mango.pojo.SmartSeat">
+        select ss.seat_id, ss.room_id, ss.building_id, ss.seat_no, ss.row_index, ss.col_index, ss.tags, ss.status, ss.assigned_major,
+               c.room_name, tb.building_name, '0' occupied
+        from reservation_demo.smart_seat ss
+        join reservation_demo.classroom c on ss.room_id = c.room_id and ss.building_id = c.building_id
+        join reservation_demo.t_building tb on c.building_id = tb.building_id
+        where ss.seat_id = #{seat_id}
+        limit 1
+    </select>
+
+    <select id="getReservationById" resultType="com.mango.pojo.SmartSeatReservation">
+        select * from reservation_demo.smart_seat_reservation where reservation_id = #{reservation_id} limit 1
+    </select>
+
+    <select id="getMyReservations" resultType="com.mango.pojo.SmartSeatReservation">
+        select r.*, s.s_name
+        from reservation_demo.smart_seat_reservation r
+        join reservation_demo.student s on s.s_id = r.s_id
+        where r.s_id = #{s_id}
+        order by r.reservation_date desc, r.start_time desc, r.created_at desc
+    </select>
+
+    <select id="getAllReservations" parameterType="Map" resultType="com.mango.pojo.SmartSeatReservation">
+        select r.*, s.s_name
+        from reservation_demo.smart_seat_reservation r
+        join reservation_demo.student s on s.s_id = r.s_id
+        where 1 = 1
+        <if test="s_id != null and s_id != ''">
+            and (r.s_id = #{s_id} or s.s_name like concat('%', #{s_id}, '%'))
+        </if>
+        <if test="status != null and status != ''">
+            and r.status = #{status}
+        </if>
+        order by r.reservation_date desc, r.start_time desc, r.created_at desc
+    </select>
+
+    <select id="countTodayReservations" resultType="int">
+        select count(1) from reservation_demo.smart_seat_reservation where reservation_date = curdate() and status in ('待签到','已签到')
+    </select>
+
+    <select id="countOpenRooms" resultType="int">
+        select count(1) from reservation_demo.classroom where room_id in (select room_id from reservation_demo.smart_seat group by room_id)
+    </select>
+
+    <select id="countViolations" resultType="int">
+        select count(1) from reservation_demo.smart_violation
+    </select>
+
+    <select id="countRoomReservations" resultType="int">
+        select count(1) from reservation_demo.smart_seat_reservation where room_id = #{room_id} and status in ('待签到','已签到')
+    </select>
+
+    <select id="countRoomSeats" resultType="int">
+        select count(1) from reservation_demo.smart_seat where room_id = #{room_id} and status = 'active'
+    </select>
+
+    <insert id="addReservation" parameterType="com.mango.pojo.SmartSeatReservation">
+        insert into reservation_demo.smart_seat_reservation(reservation_id, s_id, seat_id, seat_no, room_id, room_name, building_id, building_name, reservation_date, start_time, end_time, status, checkin_code, checkin_time, created_at)
+        values (#{reservation_id}, #{s_id}, #{seat_id}, #{seat_no}, #{room_id}, #{room_name}, #{building_id}, #{building_name}, #{reservation_date}, #{start_time}, #{end_time}, #{status}, #{checkin_code}, #{checkin_time}, #{created_at})
+    </insert>
+
+    <update id="updateReservationStatus">
+        update reservation_demo.smart_seat_reservation
+        set status = #{status},
+            checkin_time = #{checkin_time}
+        where reservation_id = #{reservation_id}
+    </update>
+
+    <update id="updateStudentCredit">
+        update reservation_demo.student
+        set credit_score = #{credit_score}
+        where s_id = #{s_id}
+    </update>
+
+    <insert id="addViolation" parameterType="com.mango.pojo.SmartViolation">
+        insert into reservation_demo.smart_violation(violation_id, reservation_id, s_id, s_name, score_change, reason, created_at)
+        values (#{violation_id}, #{reservation_id}, #{s_id}, #{s_name}, #{score_change}, #{reason}, #{created_at})
+    </insert>
+
+    <select id="getViolations" resultType="com.mango.pojo.SmartViolation">
+        select * from reservation_demo.smart_violation order by created_at desc
+    </select>
+
+    <insert id="addSeat">
+        insert into reservation_demo.smart_seat(seat_id, room_id, building_id, seat_no, row_index, col_index, tags, status, assigned_major)
+        values (#{seat_id}, #{room_id}, #{building_id}, #{seat_no}, #{row_index}, #{col_index}, #{tags}, #{status}, #{assigned_major})
+    </insert>
+
+    <update id="updateSeatStatus">
+        update reservation_demo.smart_seat set status = #{status} where seat_id = #{seat_id}
+    </update>
+
+    <select id="countSeatUsage" resultType="int">
+        select count(1) from reservation_demo.smart_seat_reservation where room_id = #{room_id} and reservation_date = #{reservation_date} and status in ('待签到','已签到')
+    </select>
+
+    <select id="countSeatUsageByDate" resultType="int">
+        select count(1) from reservation_demo.smart_seat_reservation where reservation_date = #{reservation_date} and status in ('待签到','已签到')
+    </select>
+
+</mapper>

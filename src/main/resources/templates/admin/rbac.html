@@ -1,0 +1,224 @@
+<!DOCTYPE html>
+<html lang="zh-CN" xmlns:th="http://www.thymeleaf.org">
+<head>
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <title>RBAC权限分配-自习预约管理系统</title>
+    <link rel="stylesheet" th:href="@{/assets/main/css/fonts.css}">
+    <link rel="stylesheet" th:href="@{/assets/main/css/style.css}">
+    <style>
+        body{background:#f5f7fb}.rbac-shell{font-family:-apple-system,BlinkMacSystemFont,"Segoe UI","Microsoft YaHei",Arial,sans-serif;color:#172033}.rbac-page-head{display:flex;align-items:center;justify-content:space-between;margin-bottom:18px}.rbac-title h3{font-size:24px;font-weight:700;color:#111827;margin:0 0 6px}.rbac-title p{margin:0;color:#6b7280}.rbac-header-actions{display:flex;align-items:center;gap:10px}.rbac-tag{display:inline-flex;align-items:center;border-radius:999px;background:#e8f2ff;color:#1456a0;border:1px solid #b9d8ff;padding:6px 12px;font-size:13px;font-weight:600}.rbac-tag.danger{background:#fff1f0;color:#cf1322;border-color:#ffa39e}.rbac-card{background:#fff;border:1px solid #e8edf5;border-radius:8px;box-shadow:0 10px 24px rgba(17,24,39,.06);margin-bottom:18px}.rbac-card-head{display:flex;align-items:center;justify-content:space-between;border-bottom:1px solid #edf1f7;padding:16px 18px}.rbac-card-head h4{font-size:16px;font-weight:700;margin:0;color:#172033}.rbac-card-body{padding:18px}.rbac-btn{border:1px solid #d9e2ef;background:#fff;border-radius:6px;color:#374151;padding:8px 13px;font-size:13px;line-height:1;cursor:pointer;transition:.16s}.rbac-btn:hover{border-color:#1677ff;color:#1677ff}.rbac-btn.primary{background:#1677ff;border-color:#1677ff;color:#fff}.rbac-btn.link{border:0;background:transparent;color:#1677ff;padding:4px 6px}.rbac-input{width:100%;border:1px solid #d9e2ef;border-radius:6px;padding:9px 12px;color:#111827;background:#fff}.role-row{display:grid;grid-template-columns:1.1fr 1fr;gap:12px;align-items:center;border:1px solid #edf1f7;border-radius:8px;padding:13px 14px;margin-top:10px;cursor:pointer;transition:.16s}.role-row:hover{border-color:#91caff;background:#f7fbff}.role-row.active{background:#eaf4ff;border-color:#1677ff;box-shadow:inset 3px 0 0 #1677ff}.role-name{font-weight:700;color:#172033}.role-desc{color:#6b7280}.rbac-grid{display:grid;grid-template-columns:360px minmax(0,1fr);gap:18px}.access-strip{display:grid;grid-template-columns:1.2fr auto;align-items:center;gap:18px;border:1px solid #ffd6d2;background:#fff7f6;border-radius:8px;padding:15px 18px;margin-bottom:18px}.access-strip strong{color:#991b1b}.access-list{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:8px;margin-top:12px}.access-item{display:flex;align-items:center;gap:8px;color:#374151;font-size:13px}.check-dot{width:18px;height:18px;border-radius:50%;display:inline-flex;align-items:center;justify-content:center;background:#e8f7ef;color:#0f8a45;font-size:12px;font-weight:700}.tree{font-size:14px}.tree ul{list-style:none;margin:0;padding-left:24px;border-left:1px dashed #d8e0ec}.tree>ul{padding-left:0;border-left:0}.tree li{padding:7px 0;color:#374151}.tree-node{display:flex;align-items:center;gap:8px}.tree-toggle{width:18px;height:18px;border:1px solid #cfd8e6;border-radius:4px;display:inline-flex;align-items:center;justify-content:center;color:#4b5563;background:#fff;font-size:11px}.tree input{accent-color:#1677ff}.tree label{margin:0}.tree .root-label{font-weight:700;color:#172033}.rbac-table{width:100%;border-collapse:separate;border-spacing:0}.rbac-table th{background:#f7f9fc;color:#475569;font-weight:700;border-bottom:1px solid #e5edf6;padding:13px 12px}.rbac-table td{border-bottom:1px solid #edf1f7;padding:13px 12px;color:#374151}.rbac-table tr:hover td{background:#fafcff}.status-on{display:inline-flex;border-radius:999px;padding:4px 10px;background:#e8f7ef;color:#0f8a45;font-size:12px;font-weight:700}.role-chip{display:inline-flex;border-radius:999px;padding:5px 10px;background:#eef4ff;color:#1456a0;font-size:12px;font-weight:700}.role-chip.super{background:#fff1f0;color:#cf1322}.fake-pagination{display:flex;justify-content:flex-end;gap:8px;margin-top:14px}.page-dot{border:1px solid #d9e2ef;border-radius:6px;padding:5px 10px;color:#64748b}.page-dot.active{border-color:#1677ff;background:#1677ff;color:#fff}.rbac-drawer{position:fixed;right:24px;top:86px;width:360px;background:#fff;border:1px solid #e5edf6;border-radius:8px;box-shadow:0 18px 44px rgba(15,23,42,.16);z-index:20}.drawer-head{display:flex;justify-content:space-between;align-items:center;padding:15px 16px;border-bottom:1px solid #edf1f7}.drawer-body{padding:16px}.drawer-foot{display:flex;justify-content:flex-end;gap:8px;padding:12px 16px;border-top:1px solid #edf1f7}.modal-mask{position:fixed;inset:0;background:rgba(15,23,42,.24);z-index:18}.rbac-modal{position:fixed;left:50%;top:50%;transform:translate(-50%,-50%);width:440px;background:#fff;border-radius:8px;box-shadow:0 22px 60px rgba(15,23,42,.22);z-index:21}.modal-head,.modal-body,.modal-foot{padding:16px 18px}.modal-head{border-bottom:1px solid #edf1f7}.modal-head h4{margin:0;font-size:16px;font-weight:700}.modal-foot{border-top:1px solid #edf1f7;text-align:right}.hidden{display:none}.rbac-kpi{display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:12px;margin-bottom:18px}.kpi-card{background:#fff;border:1px solid #e8edf5;border-radius:8px;padding:14px 16px}.kpi-card span{color:#6b7280;font-size:13px}.kpi-card strong{display:block;color:#111827;font-size:24px;margin-top:4px}.text-muted{color:#6b7280!important}@media(max-width:1200px){.rbac-grid{grid-template-columns:1fr}.access-list{grid-template-columns:repeat(2,minmax(0,1fr))}}@media(max-width:768px){.rbac-page-head,.access-strip{grid-template-columns:1fr;display:grid}.rbac-kpi,.access-list{grid-template-columns:1fr}.rbac-drawer{left:16px;right:16px;width:auto}.rbac-table{min-width:760px}}
+    </style>
+</head>
+<body>
+<div id="main-wrapper" class="show rbac-shell">
+    <div th:replace="~{commons/common::sidebar(active='rbac')}"></div>
+    <div th:replace="~{commons/common::header}"></div>
+
+    <div class="content-body">
+        <div class="warper container-fluid">
+            <div class="rbac-page-head">
+                <div class="rbac-title">
+                    <h3>RBAC 权限分配</h3>
+                    <p>通过角色实现统一授权管理</p>
+                </div>
+                <div class="rbac-header-actions">
+                    <span class="rbac-tag">当前用户：super-admin</span>
+                    <button class="rbac-btn">通知</button>
+                    <button class="rbac-btn">个人中心</button>
+                    <a th:href="@{/login}" class="rbac-btn">退出登录</a>
+                </div>
+            </div>
+
+            <div class="access-strip">
+                <div>
+                    <span class="rbac-tag danger">SUPER_ADMIN（全局最高权限）</span>
+                    <span class="rbac-tag danger">FULL ACCESS</span>
+                    <div class="access-list">
+                        <div class="access-item"><span class="check-dot">✓</span>用户管理全部权限</div>
+                        <div class="access-item"><span class="check-dot">✓</span>角色管理全部权限</div>
+                        <div class="access-item"><span class="check-dot">✓</span>权限管理全部权限</div>
+                        <div class="access-item"><span class="check-dot">✓</span>系统配置全部权限</div>
+                        <div class="access-item"><span class="check-dot">✓</span>日志管理全部权限</div>
+                        <div class="access-item"><span class="check-dot">✓</span>RBAC授权权限</div>
+                        <div class="access-item"><span class="check-dot">✓</span>创建管理员</div>
+                        <div class="access-item"><span class="check-dot">✓</span>删除管理员</div>
+                        <div class="access-item"><span class="check-dot">✓</span>权限继承控制</div>
+                        <div class="access-item"><span class="check-dot">✓</span>权限审计</div>
+                    </div>
+                </div>
+                <button class="rbac-btn primary" onclick="openModal()">保存权限配置</button>
+            </div>
+
+            <div class="rbac-kpi">
+                <div class="kpi-card"><span>角色总数</span><strong>5</strong></div>
+                <div class="kpi-card"><span>权限点</span><strong>18</strong></div>
+                <div class="kpi-card"><span>已授权用户</span><strong>4</strong></div>
+                <div class="kpi-card"><span>审计事件</span><strong>128</strong></div>
+            </div>
+
+            <div class="rbac-grid">
+                <div class="rbac-card">
+                    <div class="rbac-card-head">
+                        <h4>角色列表</h4>
+                        <button class="rbac-btn primary" onclick="openModal()">新增角色</button>
+                    </div>
+                    <div class="rbac-card-body">
+                        <input class="rbac-input" placeholder="搜索角色名称">
+                        <div class="role-row active">
+                            <div class="role-name">SUPER_ADMIN</div>
+                            <div class="role-desc">超级管理员</div>
+                        </div>
+                        <div class="role-row">
+                            <div class="role-name">ADMIN</div>
+                            <div class="role-desc">系统管理员</div>
+                        </div>
+                        <div class="role-row">
+                            <div class="role-name">OPERATOR</div>
+                            <div class="role-desc">运营人员</div>
+                        </div>
+                        <div class="role-row">
+                            <div class="role-name">REVIEWER</div>
+                            <div class="role-desc">审核人员</div>
+                        </div>
+                        <div class="role-row">
+                            <div class="role-name">STUDENT</div>
+                            <div class="role-desc">普通用户</div>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="rbac-card">
+                    <div class="rbac-card-head">
+                        <h4>SUPER_ADMIN 权限配置</h4>
+                        <span class="text-muted">所有节点已勾选</span>
+                    </div>
+                    <div class="rbac-card-body">
+                        <div class="tree">
+                            <ul>
+                                <li>
+                                    <div class="tree-node"><span class="tree-toggle">−</span><input type="checkbox" checked><label class="root-label">系统管理</label></div>
+                                    <ul>
+                                        <li>
+                                            <div class="tree-node"><span class="tree-toggle">−</span><input type="checkbox" checked><label>用户管理</label></div>
+                                            <ul>
+                                                <li><div class="tree-node"><span class="tree-toggle"></span><input type="checkbox" checked><label>查看用户</label></div></li>
+                                                <li><div class="tree-node"><span class="tree-toggle"></span><input type="checkbox" checked><label>创建用户</label></div></li>
+                                                <li><div class="tree-node"><span class="tree-toggle"></span><input type="checkbox" checked><label>编辑用户</label></div></li>
+                                                <li><div class="tree-node"><span class="tree-toggle"></span><input type="checkbox" checked><label>删除用户</label></div></li>
+                                            </ul>
+                                        </li>
+                                        <li>
+                                            <div class="tree-node"><span class="tree-toggle">−</span><input type="checkbox" checked><label>角色管理</label></div>
+                                            <ul>
+                                                <li><div class="tree-node"><span class="tree-toggle"></span><input type="checkbox" checked><label>查看角色</label></div></li>
+                                                <li><div class="tree-node"><span class="tree-toggle"></span><input type="checkbox" checked><label>创建角色</label></div></li>
+                                                <li><div class="tree-node"><span class="tree-toggle"></span><input type="checkbox" checked><label>编辑角色</label></div></li>
+                                                <li><div class="tree-node"><span class="tree-toggle"></span><input type="checkbox" checked><label>删除角色</label></div></li>
+                                            </ul>
+                                        </li>
+                                        <li>
+                                            <div class="tree-node"><span class="tree-toggle">−</span><input type="checkbox" checked><label>权限管理</label></div>
+                                            <ul>
+                                                <li><div class="tree-node"><span class="tree-toggle"></span><input type="checkbox" checked><label>查看权限</label></div></li>
+                                                <li><div class="tree-node"><span class="tree-toggle"></span><input type="checkbox" checked><label>分配权限</label></div></li>
+                                                <li><div class="tree-node"><span class="tree-toggle"></span><input type="checkbox" checked><label>回收权限</label></div></li>
+                                            </ul>
+                                        </li>
+                                        <li>
+                                            <div class="tree-node"><span class="tree-toggle">−</span><input type="checkbox" checked><label>日志管理</label></div>
+                                            <ul>
+                                                <li><div class="tree-node"><span class="tree-toggle"></span><input type="checkbox" checked><label>查看日志</label></div></li>
+                                                <li><div class="tree-node"><span class="tree-toggle"></span><input type="checkbox" checked><label>导出日志</label></div></li>
+                                            </ul>
+                                        </li>
+                                    </ul>
+                                </li>
+                            </ul>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <div class="rbac-card">
+                <div class="rbac-card-head">
+                    <h4>用户角色分配</h4>
+                    <button class="rbac-btn" onclick="openDrawer()">批量分配</button>
+                </div>
+                <div class="rbac-card-body">
+                    <div class="table-responsive">
+                        <table class="rbac-table">
+                            <thead>
+                            <tr><th>用户名</th><th>姓名</th><th>部门</th><th>当前角色</th><th>状态</th><th>操作</th></tr>
+                            </thead>
+                            <tbody>
+                            <tr>
+                                <td>super-admin</td><td>系统管理员</td><td>IT部</td><td><span class="role-chip super">SUPER_ADMIN</span></td><td><span class="status-on">启用</span></td>
+                                <td><button class="rbac-btn link" onclick="openDrawer()">查看</button><button class="rbac-btn link" onclick="openDrawer()">编辑</button><button class="rbac-btn link" onclick="openDrawer()">分配角色</button></td>
+                            </tr>
+                            <tr>
+                                <td>admin</td><td>管理员</td><td>IT部</td><td><span class="role-chip">ADMIN</span></td><td><span class="status-on">启用</span></td>
+                                <td><button class="rbac-btn link" onclick="openDrawer()">查看</button><button class="rbac-btn link" onclick="openDrawer()">编辑</button><button class="rbac-btn link" onclick="openDrawer()">分配角色</button></td>
+                            </tr>
+                            <tr>
+                                <td>operator01</td><td>张三</td><td>运营部</td><td><span class="role-chip">OPERATOR</span></td><td><span class="status-on">启用</span></td>
+                                <td><button class="rbac-btn link" onclick="openDrawer()">查看</button><button class="rbac-btn link" onclick="openDrawer()">编辑</button><button class="rbac-btn link" onclick="openDrawer()">分配角色</button></td>
+                            </tr>
+                            <tr>
+                                <td>reviewer01</td><td>李四</td><td>审核部</td><td><span class="role-chip">REVIEWER</span></td><td><span class="status-on">启用</span></td>
+                                <td><button class="rbac-btn link" onclick="openDrawer()">查看</button><button class="rbac-btn link" onclick="openDrawer()">编辑</button><button class="rbac-btn link" onclick="openDrawer()">分配角色</button></td>
+                            </tr>
+                            </tbody>
+                        </table>
+                    </div>
+                    <div class="fake-pagination"><span class="page-dot">上一页</span><span class="page-dot active">1</span><span class="page-dot">2</span><span class="page-dot">下一页</span></div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <div id="drawerMask" class="modal-mask hidden" onclick="closeDrawer()"></div>
+    <div id="roleDrawer" class="rbac-drawer hidden">
+        <div class="drawer-head"><strong>分配角色</strong><button class="rbac-btn link" onclick="closeDrawer()">关闭</button></div>
+        <div class="drawer-body">
+            <label>目标用户</label>
+            <input class="rbac-input" value="super-admin" readonly>
+            <div style="height:12px"></div>
+            <label>选择角色</label>
+            <select class="rbac-input">
+                <option>SUPER_ADMIN</option>
+                <option>ADMIN</option>
+                <option>OPERATOR</option>
+                <option>REVIEWER</option>
+                <option>STUDENT</option>
+            </select>
+            <div style="height:12px"></div>
+            <label>授权说明</label>
+            <textarea class="rbac-input" rows="4">SUPER_ADMIN 拥有全局最高权限，角色变更将写入权限审计日志。</textarea>
+        </div>
+        <div class="drawer-foot"><button class="rbac-btn" onclick="closeDrawer()">取消</button><button class="rbac-btn primary" onclick="closeDrawer()">确认分配</button></div>
+    </div>
+
+    <div id="modalMask" class="modal-mask hidden" onclick="closeModal()"></div>
+    <div id="saveModal" class="rbac-modal hidden">
+        <div class="modal-head"><h4>保存权限配置</h4></div>
+        <div class="modal-body">
+            <p>确认保存 SUPER_ADMIN 的全局权限配置？</p>
+            <p class="text-muted">本次操作会同步更新权限树，并记录到操作日志用于审计。</p>
+        </div>
+        <div class="modal-foot"><button class="rbac-btn" onclick="closeModal()">取消</button><button class="rbac-btn primary" onclick="closeModal()">确认保存</button></div>
+    </div>
+</div>
+
+<script src="assets/plugins/jquery/jquery.min.js"></script>
+<script src="assets/plugins/bootstrap/js/bootstrap.js"></script>
+<script src="assets/js/toggleFullScreen.js"></script>
+<script src="assets/js/main.js"></script>
+<script>
+    function openDrawer(){document.getElementById('roleDrawer').classList.remove('hidden');document.getElementById('drawerMask').classList.remove('hidden')}
+    function closeDrawer(){document.getElementById('roleDrawer').classList.add('hidden');document.getElementById('drawerMask').classList.add('hidden')}
+    function openModal(){document.getElementById('saveModal').classList.remove('hidden');document.getElementById('modalMask').classList.remove('hidden')}
+    function closeModal(){document.getElementById('saveModal').classList.add('hidden');document.getElementById('modalMask').classList.add('hidden')}
+</script>
+</body>
+</html>

@@ -1,0 +1,13 @@
+target/
+app.log
+*.log
+*.class
+*.jar
+*.war
+.DS_Store
+*.iml
+.idea/
+*.pid
+个人期末报告*
+第15组自习座位预约系统_中期汇报结果.md
+

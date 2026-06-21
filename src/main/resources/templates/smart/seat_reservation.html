@@ -1,0 +1,136 @@
+<!DOCTYPE html>
+<html lang="en" xmlns:th="http://www.thymeleaf.org">
+<head>
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <title>智慧座位预约</title>
+    <link rel="stylesheet" th:href="@{/assets/main/css/fonts.css}">
+    <link rel="stylesheet" th:href="@{/assets/main/css/style.css}">
+    <style>
+        .smart-card{border-radius:10px;border:1px solid #e6edf5;background:#fff;box-shadow:0 10px 28px rgba(31,41,55,.08);margin-bottom:18px}.smart-card .card-body{padding:20px}.metric{display:flex;justify-content:space-between;align-items:center;border-radius:8px;background:#f6f9fc;border:1px solid #e2e8f0;padding:14px 16px}.metric span{color:#6b7280}.metric strong{font-size:24px}.tag-row{display:flex;gap:8px;flex-wrap:wrap}.tag-row a{border:1px solid #d8e1eb;border-radius:999px;padding:7px 13px;color:#607083}.tag-row a.active{background:#dff4ea;color:#14734d;border-color:#9bd7bb}.seat-map{display:grid;grid-template-columns:repeat(6, minmax(72px,1fr));gap:12px;padding:18px;border:1px solid #d9e2ec;border-radius:10px;background:linear-gradient(90deg,rgba(22,99,122,.07) 1px,transparent 1px),linear-gradient(rgba(22,99,122,.07) 1px,transparent 1px),#f8fafc;background-size:36px 36px}.seat-btn{width:100%;min-height:74px;border-radius:9px;border:2px solid #14915b;background:#e8f8ef;color:#0f6b45;font-weight:700;display:grid;place-items:center;text-align:center;position:relative}.seat-btn small{font-weight:500;color:inherit;opacity:.78}.seat-btn.occupied{background:#ffe6df;border-color:#d7644d;color:#a03020}.seat-btn.disabled{background:#edf1f5;border-color:#c4ced9;color:#8b98a7}.seat-btn.assigned{background:#eee8ff;border-color:#8264d1;color:#5b3ba0}.seat-btn.assistant-unmatched{opacity:.32;filter:grayscale(.25)}.seat-btn.assistant-hit{border-color:#f0a500;background:#fff7d7;color:#7a4a00;box-shadow:0 0 0 3px rgba(240,165,0,.24)}.seat-btn.assistant-hit:after{content:"命中";position:absolute;right:6px;top:5px;font-size:11px;background:#f0a500;color:#fff;border-radius:999px;padding:1px 6px;font-weight:700}.legend span{display:inline-flex;align-items:center;margin-right:12px;color:#687587}.dot{width:10px;height:10px;border-radius:50%;display:inline-block;margin-right:6px}.dot.free{background:#14915b}.dot.occupied{background:#d7644d}.dot.disabled{background:#9ca8b5}.dot.assigned{background:#8264d1}.dot.assistant{background:#f0a500}.assistant-tags{display:flex;flex-wrap:wrap;gap:6px;margin-top:10px}.assistant-tags span{border-radius:999px;background:#fff7d7;border:1px solid #f4cf73;color:#8a5a00;padding:3px 9px;font-size:12px}.reservation-row{display:grid;grid-template-columns:minmax(0,1fr) auto;gap:12px;align-items:center;border:1px solid #e2e8f0;border-radius:8px;padding:12px;margin-bottom:10px}.status{display:inline-block;border-radius:999px;padding:3px 9px;font-size:12px;background:#eef2f7;color:#536172}.status.pending{background:#fff1d6;color:#945500}.status.checked{background:#dcf4e8;color:#0f7049}.status.violation{background:#ffe5df;color:#a03020}.assistant-box{background:#f5f8fb;border:1px solid #dce5ee;border-radius:8px;padding:12px;margin-top:10px}.form-inline-mini{display:inline-block;margin:0 4px 4px 0}.code{font-family:monospace;font-size:16px;color:#12637b;font-weight:800}
+    </style>
+</head>
+<body>
+<div id="main-wrapper" class="show">
+    <div th:replace="~{commons/common::student_sidebar(active='smart_seat')}"></div>
+    <div th:replace="~{commons/common::header}"></div>
+
+    <div class="content-body">
+        <div class="warper container-fluid">
+            <div class="row page-titles mx-0">
+                <div class="col-sm-7 p-md-0"><h4 class="text-primary">智慧自习座位预约</h4></div>
+                <div class="col-sm-5 p-md-0 text-sm-end"><a th:href="@{/smart_admin}" class="btn btn-outline-primary btn-sm" th:if="${session.login_permissions != null and session.login_permissions.contains('smart_admin:view')}">进入管理端</a></div>
+            </div>
+
+            <div class="alert alert-info" th:if="${msg != null}" th:text="${msg}"></div>
+
+            <div class="row">
+                <div class="col-md-3"><div class="metric"><span>违约积分</span><strong th:text="${creditScore}">5</strong></div></div>
+                <div class="col-md-3"><div class="metric"><span>今日预约</span><strong th:text="${dashboard.todayReservations}">0</strong></div></div>
+                <div class="col-md-3"><div class="metric"><span>开放自习室</span><strong th:text="${dashboard.openRooms}">0</strong></div></div>
+                <div class="col-md-3"><div class="metric"><span>利用率</span><strong th:text="${dashboard.utilization + '%'}">0%</strong></div></div>
+            </div>
+
+            <div class="smart-card mt-3"><div class="card-body">
+                <form th:action="@{/smart_seat}" method="get">
+                    <div class="row">
+                        <div class="col-md-3">
+                            <label>自习室</label>
+                            <select class="form-control" name="room_id">
+                                <option th:each="room:${rooms}" th:value="${room.room_id}" th:selected="${room.room_id==selectedRoomId}" th:text="${room.building_name + ' ' + room.room_name}"></option>
+                            </select>
+                        </div>
+                        <div class="col-md-2"><label>日期</label><input class="form-control" type="date" name="reservation_date" th:value="${reservationDate}"></div>
+                        <div class="col-md-2"><label>开始</label><input class="form-control" type="time" step="3600" name="start_time" th:value="${startTime}"></div>
+                        <div class="col-md-2"><label>结束</label><input class="form-control" type="time" step="3600" name="end_time" th:value="${endTime}"></div>
+                        <div class="col-md-3 d-flex align-items-end"><button class="btn btn-primary w-100" type="submit">查询空位</button></div>
+                    </div>
+                    <input type="hidden" name="tag" th:value="${tag}">
+                </form>
+                <div class="tag-row mt-3">
+                    <a th:classappend="${tag=='全部'}?' active'" th:href="@{/smart_seat(room_id=${selectedRoomId},reservation_date=${reservationDate},start_time=${startTime},end_time=${endTime},tag='全部')}">全部</a>
+                    <a th:classappend="${tag=='插座'}?' active'" th:href="@{/smart_seat(room_id=${selectedRoomId},reservation_date=${reservationDate},start_time=${startTime},end_time=${endTime},tag='插座')}">插座</a>
+                    <a th:classappend="${tag=='靠窗'}?' active'" th:href="@{/smart_seat(room_id=${selectedRoomId},reservation_date=${reservationDate},start_time=${startTime},end_time=${endTime},tag='靠窗')}">靠窗</a>
+                    <a th:classappend="${tag=='安静区'}?' active'" th:href="@{/smart_seat(room_id=${selectedRoomId},reservation_date=${reservationDate},start_time=${startTime},end_time=${endTime},tag='安静区')}">安静区</a>
+                    <a th:classappend="${tag=='院系专属'}?' active'" th:href="@{/smart_seat(room_id=${selectedRoomId},reservation_date=${reservationDate},start_time=${startTime},end_time=${endTime},tag='院系专属')}">院系专属</a>
+                </div>
+            </div></div>
+
+            <div class="row">
+                <div class="col-lg-8">
+                    <div class="smart-card"><div class="card-body">
+                        <div class="d-flex justify-content-between align-items-center mb-2">
+                            <h5>座位分布图</h5>
+                            <div class="legend"><span><i class="dot free"></i>可约</span><span><i class="dot occupied"></i>占用</span><span><i class="dot disabled"></i>停用</span><span><i class="dot assigned"></i>院系专属</span><span th:if="${assistantSeatQuery}"><i class="dot assistant"></i>助手命中</span></div>
+                        </div>
+                        <div class="seat-map">
+                            <form class="seat-form" th:each="seat:${seats}" th:action="@{/smart_seat/reserve}" method="post">
+                                <input type="hidden" name="seat_id" th:value="${seat.seat_id}">
+                                <input type="hidden" name="reservation_date" th:value="${reservationDate}">
+                                <input type="hidden" name="start_time" th:value="${startTime}">
+                                <input type="hidden" name="end_time" th:value="${endTime}">
+                                <button type="submit" class="seat-btn" th:classappend="${(seat.occupied=='1'?' occupied':(seat.status!='active'?' disabled':(seat.assigned_major!=null and seat.assigned_major!=''?' assigned':''))) + (assistantSeatQuery ? (assistantMatchedSeatIds.contains(seat.seat_id) ? ' assistant-hit' : ' assistant-unmatched') : '')}" th:disabled="${seat.occupied=='1' or seat.status!='active' or (assistantSeatQuery and !assistantMatchedSeatIds.contains(seat.seat_id))}">
+                                    <span th:text="${seat.seat_no}">S01</span>
+                                    <small th:text="${seat.tags}">插座</small>
+                                </button>
+                            </form>
+                        </div>
+                    </div></div>
+                </div>
+                <div class="col-lg-4">
+                    <div class="smart-card"><div class="card-body">
+                        <h5>规则版智能助手</h5>
+                        <form th:action="@{/smart_seat}" method="get">
+                            <input type="hidden" name="room_id" th:value="${selectedRoomId}">
+                            <input type="hidden" name="reservation_date" th:value="${reservationDate}">
+                            <input type="hidden" name="start_time" th:value="${startTime}">
+                            <input type="hidden" name="end_time" th:value="${endTime}">
+                            <input class="form-control" name="assistant_query" th:value="${assistantQuery}" placeholder="今晚有插座的安静区座位">
+                            <button class="btn btn-outline-primary w-100 mt-2" type="submit">查询</button>
+                        </form>
+                        <div class="assistant-box" th:if="${assistantResult != null}">
+                            <div th:text="${assistantResult}"></div>
+                            <div class="assistant-tags" th:if="${assistantSeatQuery and assistantTags.size() > 0}">
+                                <span th:each="assistantTag:${assistantTags}" th:text="${assistantTag}">插座</span>
+                            </div>
+                        </div>
+                    </div></div>
+                    <div class="smart-card"><div class="card-body">
+                        <h5>签到说明</h5>
+                        <p class="text-muted mb-0">预约后系统生成5位动态码。开始后20分钟未签到，可点击“模拟超时违约”演示自动释放座位和扣分。</p>
+                    </div></div>
+                </div>
+            </div>
+
+            <div class="smart-card"><div class="card-body">
+                <h5>我的预约</h5>
+                <div class="reservation-row" th:each="reservation:${reservations}">
+                    <div>
+                        <strong th:text="${reservation.building_name + ' ' + reservation.room_name + ' ' + reservation.seat_no}">图书馆 A201 S01</strong>
+                        <div class="text-muted" th:text="${reservation.reservation_date + ' ' + reservation.start_time + '-' + reservation.end_time}"></div>
+                        <div>动态码：<span class="code" th:text="${reservation.checkin_code}">12345</span> <span class="status" th:classappend="${reservation.status=='待签到'}?' pending':(${reservation.status=='已签到'}?' checked':(${reservation.status=='违约'}?' violation':''))" th:text="${reservation.status}"></span></div>
+                    </div>
+                    <div>
+                        <form class="form-inline-mini" th:if="${reservation.status=='待签到'}" th:action="@{/smart_seat/checkin}" method="post">
+                            <input type="hidden" name="reservation_id" th:value="${reservation.reservation_id}">
+                            <input class="form-control form-control-sm" style="width:96px;display:inline-block" name="checkin_code" placeholder="验证码">
+                            <button class="btn btn-sm btn-success" type="submit">签到</button>
+                        </form>
+                        <form class="form-inline-mini" th:if="${reservation.status=='待签到'}" th:action="@{/smart_seat/cancel}" method="post">
+                            <input type="hidden" name="reservation_id" th:value="${reservation.reservation_id}"><button class="btn btn-sm btn-outline-secondary" type="submit">取消</button>
+                        </form>
+                        <form class="form-inline-mini" th:if="${reservation.status=='待签到'}" th:action="@{/smart_seat/timeout}" method="post">
+                            <input type="hidden" name="reservation_id" th:value="${reservation.reservation_id}"><button class="btn btn-sm btn-outline-danger" type="submit">模拟超时违约</button>
+                        </form>
+                    </div>
+                </div>
+            </div></div>
+        </div>
+    </div>
+</div>
+<script src="assets/plugins/jquery/jquery.min.js"></script>
+<script src="assets/plugins/bootstrap/js/bootstrap.js"></script>
+<script src="assets/js/toggleFullScreen.js"></script>
+<script src="assets/js/main.js"></script>
+</body>
+</html>

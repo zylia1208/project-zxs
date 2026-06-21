@@ -1,0 +1,114 @@
+<!DOCTYPE html>
+<html lang="en" xmlns:th="http://www.thymeleaf.org">
+<head>
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <title>智慧预约管理端</title>
+    <link rel="stylesheet" th:href="@{/assets/main/css/fonts.css}">
+    <link rel="stylesheet" th:href="@{/assets/main/css/style.css}">
+    <style>
+        .smart-card{border-radius:10px;border:1px solid #e6edf5;background:#fff;box-shadow:0 10px 28px rgba(31,41,55,.08);margin-bottom:18px}.smart-card .card-body{padding:20px}.metric{display:flex;justify-content:space-between;align-items:center;border-radius:8px;background:#f6f9fc;border:1px solid #e2e8f0;padding:14px 16px}.metric span{color:#6b7280}.metric strong{font-size:24px}.room-line,.seat-line,.violation-line{border:1px solid #e2e8f0;border-radius:8px;padding:12px;margin-bottom:10px}.status{display:inline-block;border-radius:999px;padding:3px 9px;font-size:12px;background:#eef2f7;color:#536172}.status.pending{background:#fff1d6;color:#945500}.status.checked{background:#dcf4e8;color:#0f7049}.status.violation{background:#ffe5df;color:#a03020}.readonly{background:#fff7e6;border:1px solid #f0c47b;color:#865200;border-radius:8px;padding:10px 12px}.role-pill{display:inline-block;border:1px solid #1456a0;border-radius:6px;padding:6px 12px;color:#fff;background:#1456a0;font-size:13px;margin-right:8px}
+    </style>
+</head>
+<body>
+<div id="main-wrapper" class="show">
+    <div th:replace="~{commons/common::sidebar(active='smart_admin')}"></div>
+    <div th:replace="~{commons/common::header}"></div>
+    <div class="content-body">
+        <div class="warper container-fluid">
+            <div class="row page-titles mx-0">
+                <div class="col-sm-7 p-md-0"><h4 class="text-primary">智慧预约管理端</h4></div>
+                <div class="col-sm-5 p-md-0 text-sm-end">
+                    <span class="role-pill" th:text="${roleName}">普通管理员</span>
+                    <a th:href="@{/smart_seat}" class="btn btn-outline-primary btn-sm">学生端预览</a>
+                </div>
+            </div>
+            <div class="alert alert-info" th:if="${msg != null}" th:text="${msg}"></div>
+
+            <div class="smart-card"><div class="card-body">
+                <form th:action="@{/smart_admin}" method="get" class="row align-items-end">
+                    <div class="col-md-3">
+                        <label>当前角色</label>
+                        <input class="form-control" th:value="${roleName}" readonly>
+                    </div>
+                    <div class="col-md-3"><label>学号/姓名</label><input class="form-control" name="s_id" th:value="${studentId}"></div>
+                    <div class="col-md-3"><label>状态</label><select class="form-control" name="status"><option value="">全部</option><option th:selected="${status=='待签到'}">待签到</option><option th:selected="${status=='已签到'}">已签到</option><option th:selected="${status=='违约'}">违约</option></select></div>
+                    <div class="col-md-3"><button class="btn btn-primary w-100" type="submit">刷新</button></div>
+                </form>
+                <div class="readonly mt-3" th:if="${!canManageSeat}">RBAC：当前角色只能查看统计、预约和违约记录，座位新增、启用、停用等写操作会被接口拦截。</div>
+            </div></div>
+
+            <div class="row">
+                <div class="col-md-3"><div class="metric"><span>今日预约</span><strong th:text="${dashboard.todayReservations}">0</strong></div></div>
+                <div class="col-md-3"><div class="metric"><span>平均利用率</span><strong th:text="${dashboard.utilization + '%'}">0%</strong></div></div>
+                <div class="col-md-3"><div class="metric"><span>违约次数</span><strong th:text="${dashboard.violations}">0</strong></div></div>
+                <div class="col-md-3"><div class="metric"><span>开放资源</span><strong th:text="${dashboard.openRooms}">0</strong></div></div>
+            </div>
+
+            <div class="row mt-3">
+                <div class="col-lg-7">
+                    <div class="smart-card"><div class="card-body">
+                        <h5>自习室资源</h5>
+                        <div class="room-line" th:each="room:${rooms}">
+                            <strong th:text="${room.building_name + ' ' + room.room_name}">图书馆 A201</strong>
+                            <div class="text-muted" th:text="${room.room_floor + 'F · 总座位 ' + room.available_seat + ' · 已维护座位 ' + room.seat_count + ' · 今日预约 ' + room.active_reservation_count}"></div>
+                        </div>
+                    </div></div>
+                    <div class="smart-card"><div class="card-body">
+                        <h5>座位维护</h5>
+                        <form th:action="@{/smart_admin/add_seat}" method="post" class="row">
+                            <div class="col-md-3"><input class="form-control" name="room_id" placeholder="教室编号" th:disabled="${!canManageSeat}"></div>
+                            <div class="col-md-3"><input class="form-control" name="building_id" placeholder="楼编号" th:disabled="${!canManageSeat}"></div>
+                            <div class="col-md-2"><input class="form-control" name="seat_no" placeholder="S25" th:disabled="${!canManageSeat}"></div>
+                            <div class="col-md-2"><input class="form-control" name="tags" placeholder="插座,靠窗" th:disabled="${!canManageSeat}"></div>
+                            <div class="col-md-2"><button class="btn btn-success w-100" type="submit" th:disabled="${!canManageSeat}">新增</button></div>
+                        </form>
+                        <hr>
+                        <div class="seat-line" th:each="seat:${seats}">
+                            <strong th:text="${seat.room_name + ' ' + seat.seat_no}">A201 S01</strong>
+                            <span class="text-muted" th:text="${seat.tags + ' · ' + seat.status}"></span>
+                            <form th:action="@{/smart_admin/toggle_seat}" method="post" style="display:inline-block;float:right">
+                                <input type="hidden" name="seat_id" th:value="${seat.seat_id}">
+                                <input type="hidden" name="status" th:value="${seat.status=='active'?'disabled':'active'}">
+                                <button class="btn btn-sm btn-outline-secondary" type="submit" th:disabled="${!canManageSeat}" th:text="${seat.status=='active'?'停用':'启用'}">停用</button>
+                            </form>
+                        </div>
+                    </div></div>
+                </div>
+                <div class="col-lg-5">
+                    <div class="smart-card"><div class="card-body">
+                        <h5>违约记录</h5>
+                        <div class="violation-line" th:each="violation:${violations}">
+                            <strong th:text="${violation.s_name + '（' + violation.s_id + '）'}">学生</strong>
+                            <div class="text-muted" th:text="${violation.reason + ' · ' + violation.created_at}"></div>
+                        </div>
+                    </div></div>
+                </div>
+            </div>
+
+            <div class="smart-card"><div class="card-body">
+                <h5>预约记录</h5>
+                <div class="table-responsive">
+                    <table class="table table-hover">
+                        <thead><tr><th>学生</th><th>座位</th><th>日期</th><th>时间</th><th>状态</th></tr></thead>
+                        <tbody>
+                        <tr th:each="reservation:${reservations}">
+                            <td th:text="${reservation.s_name + ' ' + reservation.s_id}"></td>
+                            <td th:text="${reservation.building_name + ' ' + reservation.room_name + ' ' + reservation.seat_no}"></td>
+                            <td th:text="${reservation.reservation_date}"></td>
+                            <td th:text="${reservation.start_time + '-' + reservation.end_time}"></td>
+                            <td><span class="status" th:classappend="${reservation.status=='待签到'}?' pending':(${reservation.status=='已签到'}?' checked':(${reservation.status=='违约'}?' violation':''))" th:text="${reservation.status}"></span></td>
+                        </tr>
+                        </tbody>
+                    </table>
+                </div>
+            </div></div>
+        </div>
+    </div>
+</div>
+<script src="assets/plugins/jquery/jquery.min.js"></script>
+<script src="assets/plugins/bootstrap/js/bootstrap.js"></script>
+<script src="assets/js/toggleFullScreen.js"></script>
+<script src="assets/js/main.js"></script>
+</body>
+</html>
